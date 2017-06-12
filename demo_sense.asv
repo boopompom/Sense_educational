@@ -1,0 +1,73 @@
+%% DEMO for Cartesian 2D SENSE for scientific MRI meeting 12 June
+clear all;close all;clc
+addpath(genpath(pwd))
+
+%% Basic settings
+NC=4;           % Number of receive coils
+M=256;          % Matrix size 
+csm_sigma=80;   % Width of CSM profiles  (Appropriate number depends on M)
+R=2;            % Undersample factor (has to be an integer in this implementation)
+verbose=1;      % 1=visuals, 0=none
+
+%% Create phantom and coil sensitivity maps
+x_true=phantom(M);
+csm=generate_csm(NC,M,csm_sigma);
+
+% Visualization
+if verbose
+    figure,imshow3(cat(3,x_true,csm),[],[1 (NC+1)]);
+    title('Phantom and coil sensitivity maps');
+end
+
+%% Why does the classical formalism work for cartesian sampling?
+% Lets examine the corresponding point-spread-function (PSF)
+% This simply means that we perform an experiment where we put all ones on
+% our samples and mimic undersampling by entering zero values at phase
+% encoding lines
+
+% Lets examine the PSF for a couple of undersampled Cartesian cases
+for Rn=1:4                   % Undersampling factor
+    K_psf=zeros(M,M);        % K-space samples
+    K_psf(1:Rn:end,:)=1;     % Uniform undersampling
+    I_psf(:,:,Rn)=fftshift(ifft2(ifftshift(K_psf)))*Rn;  % 2D Fast inverse Fourier Transform
+end
+
+if verbose;figure,imshow3(abs(I_psf),[],[1 4]);title('PSF for R=1 till R=4');end
+
+% You can observe that the energy gets folded over R pixels in the
+% points spread function. That allows us to unfold this energy over these
+% discrete numbers of pixels using the coil sensitivity maps.
+
+%% How does this unfolding work?
+% Lets mimic the MR acquistions and take a look at the folded images:
+% We take our phantom image, multiply with csm and perform a Fourier transform.
+y=ifftshift(fft2(fftshift(repmat(x_true,[1 1 NC]).*csm)));
+
+% Now perform the undersampling with factor R by zerofilling lines
+y_us=zeros(size(y));
+idx=sort([floor(M/2)-R+1:-R:1 floor(M/2)+1:R:M]);
+y_us(idx,:,:)=y(idx,:,:);
+
+% Perform an inverse fourier transform
+x_folded=fftshift(ifft2(ifftshift(y_us)));
+
+% Lets examine the individual coil images. You can observe that every receive
+% channel exhibitis different degrees of aliasing.
+% This information we use to unfold the images.
+if verbose;slicer(x_folded);end
+
+%% Lets perform the unfolding according to the formula below
+% p=(S^(H) Psi^(-1) S)^(-1) S^(H) Psi^(-1) m
+% p=unfolded pixel value
+% Psi=noise covariance matrix --> Assumed to be the identity matrix for now
+% S=senstivity matrix
+% H=conjugate transpose operation
+
+% Loop over all pixels and perform the inversion described above
+% remember that we performed the undersampling in the X-dimension
+for x=1:M
+    for y=1:M
+        m=x_folded(x,y,:)+
+        p(x,y)=x_folded(x,y,:)
+
+
