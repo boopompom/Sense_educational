@@ -146,21 +146,16 @@ end
 %
 % Now we create a struct (params) that contains all the information to do the steps 
 % described above. And then we send this to the Matlab lsqr function. This
-% is all we need to solve a l2-norm cost function!
-
-% Generate the structure
+% is all we need to solve a l2-
 params={};
-params.S=S;                    % Coil operator
-params.F=F;                    % Fourier operator
-params.W=DCF(sqrt(weights));   % Density operator
-params.Id=size(csm);           % Image dimensions
-params.Kd=size(y);             % K-space dimensions
-params.y=params.W*y;           % Measured k-space data
+params.S=S;
+params.F=F;
+params.W=DCF(sqrt(weights));
+params.Id=size(csm);
+params.Kd=size(y);
+params.y=params.W*y;
 
-% Send the struct to the solver
-func=@(x,tr) iterative_sense(x,params,tr);
-[recon,~,~,~,~,~]=lsqr(func,params.y(:),1E-10,10);
-x_recon=reshape(recon,params.Id(1:2));
+x_recon=configure_iterative_sense(params);
 
 if verbose
    tmp=S*x_aliased;
