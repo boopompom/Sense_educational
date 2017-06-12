@@ -28,7 +28,7 @@ R=makedyadic(R);   % Make R 2^n
 % Create phantom without any noise
 x_true=phantom(M);
 
-% If you wanted the brain phantom, do some interpolation
+% If you wanted the brain phantom, do some interpolation 
 if brain;load brain;[x1,y1]=meshgrid(1:512,1:512);[x2,y2]=meshgrid(1:M,1:M);
     x_true=interp2(x1,y1,abs(x_true),512/M*x2,512/M*y2,'linear');end
 
@@ -50,7 +50,8 @@ end
 % our samples and mimic undersampling by entering zero values at specific phase
 % encoding lines
 
-% Lets examine the PSF for a couple of undersampled Radial cases
+% Lets examine the PSF for a couple of undersampled Radial cases, dont
+% bother about the syntax for now. Just look at the results
 for Rn=1:4                   % Undersampling factor
     angles=0:2*pi/(M*pi/2/Rn-1):2*pi;
     ktraj=radial_trajectory(angles,M);
@@ -71,16 +72,16 @@ if verbose;
 end
 
 % You can observe that the energy gets folded over almost all pixels to
-% some kind of amount. If we follow the same approach for the Cartesian
-% sampling case we will have to invert the S^(H) * S matrix which will have 
-% size of M^4 and we have to do this for every pixel!
+% some kind of amount. This is what we often refer to as incoherent aliasing.
+% If we follow the same approach for the Cartesian sampling case we will have 
+% to invert the S^(H) * S matrix which will have size of M^4 and we have to do this for every pixel!
 % This is computionally too expensive and thats why it doesnt work.
 
-%% Define radial trajectory, weigts and NUFFT operators
+%% Define radial trajectory, weights and NUFFT operators
 % First we have to define a couple of operators associated with radial
 % sampling. This includes the non-uniform fourier transform, density
 % compensation operator and the correct k-space trajectory and density
-% weights.
+% weights. It is not important to understand the syntax for now.
 
 % Define the radial angles, uniformly spaced 
 angles=0:2*pi/(M*pi/2/R-1):2*pi; % [radians]
@@ -97,8 +98,8 @@ S=CC(csm);      % Sense operator
 F=FG2D(ktraj,[M M NC],[M size(ktraj,2) NC]); % Fourier operator
 
 %% Lets mimic the MR experiment
-% We take our phantom image (x_true), multiply it with the coil sensitivity maps (csm)
-% and subsequently perform a Fourier transform. This mimics the process at the
+% We take our phantom image (x_true), multiply it with the coil sensitivity maps (S operator)
+% and subsequently perform a Fourier transform (F operator). This mimics the process at the
 % scanner!
 y=F*(S'*x_true);
 
@@ -146,16 +147,23 @@ end
 %
 % Now we create a struct (params) that contains all the information to do the steps 
 % described above. And then we send this to the Matlab lsqr function. This
-% is all we need to solve a l2-
-params={};
-params.S=S;
-params.F=F;
-params.W=DCF(sqrt(weights));
-params.Id=size(csm);
-params.Kd=size(y);
-params.y=params.W*y;
+% is all we need to solve a l2-norm cost function! We don't need to have
+% any knowledge about the problem, as long as we can define the forward and
+% adjoint operation and know that the problem is linear and convex.
 
-x_recon=configure_iterative_sense(params);
+% Generate the structure
+params={};
+params.S=S;                    % Coil operator
+params.F=F;                    % Fourier operator
+params.W=DCF(sqrt(weights));   % Density operator
+params.Id=size(csm);           % Image dimensions
+params.Kd=size(y);             % K-space dimensions
+params.y=params.W*y;           % Measured k-space data
+
+% Send the struct to the solver
+func=@(x,tr) iterative_sense(x,params,tr);
+[recon,~,~,~,~,~]=lsqr(func,params.y(:),1E-10,10);
+x_recon=reshape(recon,params.Id(1:2));
 
 if verbose
    tmp=S*x_aliased;

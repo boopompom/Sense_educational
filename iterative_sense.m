@@ -6,7 +6,7 @@ if strcmp(transp_flag,'transp') % Nonuniform k-space uncombined --> uniform imag
     % Vector to matrix
     x=vec_to_matrix(x(1:prod(params.Kd)),params.Kd);
 
-    % Data fidelity part 
+    % Fourier transform
     res=params.F'*(params.W*x);
     
     % Coil sensitivity maps operator
@@ -24,7 +24,7 @@ elseif strcmp(transp_flag,'notransp') % uniform image combined --> nonuniform k-
     % S operator
     x=params.S'*x;
     
-    % Data fidelity part
+    % Fourier transform
     res=params.W*(params.F*x);
     
     % Vectorize
