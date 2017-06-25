@@ -17,7 +17,6 @@ if strcmp(transp_flag,'transp') % Nonuniform k-space uncombined --> uniform imag
     
 elseif strcmp(transp_flag,'notransp') % uniform image combined --> nonuniform k-space uncombined
     
-
     % Vector to matrix
     x=vec_to_matrix(x,params.Id(1:2));
     

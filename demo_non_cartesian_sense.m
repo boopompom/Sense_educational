@@ -64,7 +64,7 @@ for Rn=1:4                   % Undersampling factor
     I_psf(:,:,Rn)=I_psf(:,:,Rn)/max(max(abs(I_psf(:,:,Rn))));
 end
 
-if verbose;
+if verbose
     figure(2),imshow3(log(abs(I_psf)+1),[0 0.05],[1 4]);
     set(gcf, 'Position', get(0, 'Screensize'));
     title('Point Spread Function for R=1 till R=4');

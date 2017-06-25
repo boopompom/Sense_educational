@@ -36,7 +36,7 @@ elseif strcmpi(varargin{2},'anterior') && mod(sqrt(nc),1)==0
         dx=repmat(-Rdims(1)/2:Rdims(1)/(sqrt(nc)-1):Rdims(1)/2,[sqrt(nc) 1]);
         dx=dx(:);dy=dy(:);
 else
-    fprintf('Error: No legit input ---> no output generated\n')
+    fprintf('Error: For anterior style NC needs to be an integer of x^n ---> no output generated\n')
     csm=0;
     return;
 end

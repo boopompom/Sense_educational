@@ -318,7 +318,7 @@ tol = 1e-6;
 if all(col(abs(round(kk) - kk)) < tol) ...
 	&& any(om(:)) ... % trick: ignore all-zero om used in nufft_table_init()
 	&& (streq(ktype, 'minmax:kb') || streq(ktype, 'kaiser'))
-	warn('DFT samples with ktype="%s" has suboptimal accuracy', ktype)
+	%warn('DFT samples with ktype="%s" has suboptimal accuracy', ktype)
 end
 
 
